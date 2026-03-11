@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Wand2, Printer, Trash2, Trophy, CheckCircle2, AlertTriangle, Dices, Eraser } from 'lucide-react';
 
 export default function App() {
-  const [oddily, setOddily] = useState([
+  // 1. VÝCHOZÍ STRUKTURA ODDÍLŮ
+  const defaultOddily = [
     { id: 1, pohlavi: 'Kluci', vek: 'Nejstarší', deti: [] },
     { id: 2, pohlavi: 'Holky', vek: 'Nejstarší', deti: [] },
     { id: 3, pohlavi: 'Kluci', vek: 'Starší', deti: [] },
@@ -11,14 +12,32 @@ export default function App() {
     { id: 6, pohlavi: 'Holky', vek: 'Mladší', deti: [] },
     { id: 7, pohlavi: 'Kluci', vek: 'Nejmladší', deti: [] },
     { id: 8, pohlavi: 'Holky', vek: 'Nejmladší', deti: [] }
-  ]);
+  ];
+
+  // 2. NAČTENÍ DAT Z PAMĚTI PROHLÍŽEČE PŘI STARTU
+  const [oddily, setOddily] = useState(() => {
+    const ulozenaData = localStorage.getItem('taborRozdelovacData');
+    if (ulozenaData) {
+      try {
+        return JSON.parse(ulozenaData);
+      } catch (e) {
+        return defaultOddily;
+      }
+    }
+    return defaultOddily;
+  });
 
   const [vysledneDruziny, setVysledneDruziny] = useState([]);
   const [pocetDruzin, setPocetDruzin] = useState(8);
   const [showModal, setShowModal] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
-  const [showEmptyWarningModal, setShowEmptyWarningModal] = useState(false); // Nový stav pro varování prázdných oddílů
+  const [showEmptyWarningModal, setShowEmptyWarningModal] = useState(false);
   const [pocetTestovacichDeti, setPocetTestovacichDeti] = useState(85);
+
+  // 3. AUTOMATICKÉ UKLÁDÁNÍ PŘI KAŽDÉ ZMĚNĚ
+  useEffect(() => {
+    localStorage.setItem('taborRozdelovacData', JSON.stringify(oddily));
+  }, [oddily]);
 
   const barvyDruzin = [
     { jmeno: 'Žlutá', bg: 'bg-yellow-400', text: 'text-yellow-950', border: 'border-yellow-200', light: 'bg-yellow-50' },
@@ -62,7 +81,7 @@ export default function App() {
   };
 
   const potvrditVymazani = () => {
-    setOddily(oddily.map(o => ({ ...o, deti: [] })));
+    setOddily(defaultOddily);
     setVysledneDruziny([]);
     setShowClearModal(false);
   };
@@ -77,7 +96,6 @@ export default function App() {
     setOddily(prev => prev.map(o => o.id === oddilId ? { ...o, deti: o.deti.filter((_, i) => i !== index) } : o));
   };
 
-  // Funkce obsluhující kliknutí na tlačítko Rozdělit
   const handleRozdelitClick = () => {
     const maPrazdnyOddil = oddily.some(o => o.deti.length === 0);
     if (maPrazdnyOddil) {
@@ -362,7 +380,7 @@ export default function App() {
                   onClick={() => window.print()} 
                   className="bg-slate-900 text-white px-10 py-5 rounded-2xl font-black flex items-center gap-3 hover:bg-slate-700 transition shadow-2xl print:hidden active:scale-95 text-xl"
                 >
-                  <Printer size={28} /> Tisk na nástěnku
+                  <Printer size={28} /> TISK
                 </button>
               </div>
               
