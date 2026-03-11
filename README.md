@@ -49,6 +49,7 @@ Aplikace je postavena na moderním front-end stacku:
 
 ## 💡 Jak to funguje?
 👉 **[Podrobný manuál k algoritmu najdete zde](./taborový_rozdělovač.pdf)**
+
 Algoritmus pracuje v několika krocích pro zajištění maximální spravedlnosti:
 
 ### 1. Vstupní data a Ranky
