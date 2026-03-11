@@ -29,7 +29,7 @@ Aplikace je postavena na moderním front-end stacku:
 
 1.  **Naklonování repozitáře:**
     ```bash
-    git clone [https://github.com/Mrtekbejby/RozdelovacTabor.git](https://github.com/Mrtekbejby/RozdelovacTabor.git)
+    git clone https://github.com/Mrtekbejby/RozdelovacTabor.git
       ```
     ```bash
     cd RozdelovacTabor
