@@ -1,4 +1,5 @@
 # 🏕️ Táborový Rozřazovač
+**Vytvořil Karel Špitálník pro II. Běh**
 
 Chytrá webová aplikace pro spravedlivé a automatické rozdělování dětí do táborových družin. Aplikace využívá pokročilý matematický algoritmus (Logika Tahounů a zrcadlové párování 1+12) pro zajištění absolutní vyrovnanosti týmů napříč věkem, pohlavím i dovednostmi.
 
@@ -9,6 +10,12 @@ Chytrá webová aplikace pro spravedlivé a automatické rozdělování dětí d
 * **Generátor testovacích dat:** Možnost vygenerovat náhodná jména pro rychlé otestování algoritmu.
 * **Ochrana proti chybám:** Modální okna pro potvrzení nevratných akcí a upozornění na prázdné oddíly.
 * **Print-ready výstup:** Finální rozdělení družin lze jedním kliknutím vytisknout v čistém designu přímo na nástěnku.
+
+## 🧰 Co si musíte stáhnout (Prerekvizity)
+Pokud nemáte v počítači žádné programátorské nástroje, musíte si nejprve nainstalovat tyto dva programy
+
+1.  **[Node.js (verze LTS)](https://nodejs.org/)** – Základní prostředí, které umožňuje aplikaci v počítači spustit.
+2.  **[Git](https://git-scm.com/downloads)** – Nástroj pro stažení kódu z GitHubu do vašeho počítače.
 
 ## 🛠️ Technologie
 
@@ -23,6 +30,8 @@ Aplikace je postavena na moderním front-end stacku:
 1.  **Naklonování repozitáře:**
     ```bash
     git clone [https://github.com/Mrtekbejby/RozdelovacTabor.git](https://github.com/Mrtekbejby/RozdelovacTabor.git)
+      ```
+    ```bash
     cd RozdelovacTabor
     ```
 
@@ -40,7 +49,19 @@ Aplikace je postavena na moderním front-end stacku:
 
 ## 💡 Jak to funguje?
 
-Aplikace používá kombinaci několika přístupů:
-1.  **Zrcadlové párování:** Nejsilnější dítě z oddílu tvoří pár s tím nejslabším (Rank #1 + Rank #12), aby byl součet jejich "síly" roven průměru.
-2.  **Logika Tahounů:** Pokud není možné vytvořit páry pro všechny družiny, do družin vstupují jako jednotlivci výhradně "Tahouni" (děti z vrchní části žebříčku), zatímco slabší děti jsou vždy chráněny v páru.
-3.  **Snake draft:** Distribuce balíčků dětí do družin probíhá s rotačním posunem, aby se předešlo nakumulování všech nejlepších dětí v prvních družinách.
+Algoritmus pracuje v několika krocích pro zajištění maximální spravedlnosti:
+
+### 1. Vstupní data a Ranky
+* Děti jsou rozděleny do 8 oddílů podle věku a pohlaví.
+* V každém oddílu jsou seřazeny podle výkonnosti (Ranku).
+* Rank #1 je nejlepší dítě z oddílu, Rank #N je dovednostně nejslabší.
+
+### 2. Příprava balíčků (Logika rozdělení oddílu)
+Při rozdělování algoritmus rozdělí oddíl na tolik „balíčků“, kolik je cílových družin. [cite: 12] Využívá k tomu dvě teorie:
+* **Logika Tahounů:** Nejsilnější děti (Rank #1, #2...) jdou do balíčku samotné jako jednotlivci, aby tým za svůj oddíl podržely. 
+* **Zrcadlové párování (1+12):** Slabší děti jsou spárovány se silnějšími ze středu tabulky (nejlepší ze zbývajících + úplně nejhorší), čímž vzniknou dvojice se stejnou souhrnnou silou.
+
+### 3. Distribuce a Rotace (Snake draft)
+* Jakmile jsou balíčky připraveny, jsou rozdávány družinám pomocí rotačního algoritmu. 
+* Startovní pozice pro rozdávání se u každého oddílu posouvá (např. 2. oddíl začne od 2. družiny), aby jedna družina nezískala nejlepší děti ze všech kategorií.
+* Výsledkem je absolutní promíchání sil a garantované zastoupení všech kategorií v každém týmu.
