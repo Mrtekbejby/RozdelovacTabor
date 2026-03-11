@@ -48,7 +48,7 @@ Aplikace je postavena na moderním front-end stacku:
     Aplikace poběží na adrese (obvykle `http://localhost:5173`), kterou vám terminál vypíše.
 
 ## 💡 Jak to funguje?
-
+👉 **[Podrobný manuál k algoritmu najdete zde](./taborový_rozdělovač.pdf)**
 Algoritmus pracuje v několika krocích pro zajištění maximální spravedlnosti:
 
 ### 1. Vstupní data a Ranky
