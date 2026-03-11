@@ -58,7 +58,9 @@ Algoritmus pracuje v několika krocích pro zajištění maximální spravedlnos
 * Rank #1 je nejlepší dítě z oddílu, Rank #N je dovednostně nejslabší.
 
 ### 2. Příprava balíčků (Logika rozdělení oddílu)
-Při rozdělování algoritmus rozdělí oddíl na tolik „balíčků“, kolik je cílových družin. [cite: 12] Využívá k tomu dvě teorie:
+
+Při rozdělování algoritmus rozdělí oddíl na tolik „balíčků“, kolik je cílových družin. Využívá k tomu dvě teorie:
+
 * **Logika Tahounů:** Nejsilnější děti (Rank #1, #2...) jdou do balíčku samotné jako jednotlivci, aby tým za svůj oddíl podržely. 
 * **Zrcadlové párování (1+12):** Slabší děti jsou spárovány se silnějšími ze středu tabulky (nejlepší ze zbývajících + úplně nejhorší), čímž vzniknou dvojice se stejnou souhrnnou silou.
 

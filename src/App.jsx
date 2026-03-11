@@ -278,15 +278,13 @@ export default function App() {
                 <button onClick={() => window.print()} className="bg-slate-900 text-white px-10 py-5 rounded-2xl font-black flex items-center gap-3 hover:bg-slate-700 transition shadow-2xl text-xl"><Printer size={28} /> TISK</button>
               </div>
               
-              {/* ZMĚNA: print:block pro korektní zalomení stránek */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 print:block">
                 {vysledneDruziny.map((druzina, idx) => {
                   const kluciCount = druzina.filter(d => d.pohlavi === 'Kluci').length;
                   const holkyCount = druzina.filter(d => d.pohlavi === 'Holky').length;
                   const oddilyStats = Array.from({length: 8}, (_, i) => i + 1).map(id => ({ id, count: druzina.filter(d => d.oddil === id).length })).filter(o => o.count > 0);
                   return (
-                    /* ZMĚNA: print:break-after-page a print:mb-0 */
-                    <div key={idx} className={`border-2 rounded-[3rem] overflow-hidden shadow-2xl transition-all hover:scale-[1.02] flex flex-col mb-8 print:mb-0 print:break-after-page ${barvyDruzin[idx].border} ${barvyDruzin[idx].light}`}>
+                    <div key={idx} className={`border-2 rounded-[3rem] overflow-hidden shadow-2xl transition-all hover:scale-[1.02] flex flex-col mb-8 print:mb-0 print:break-after-page print:break-inside-avoid ${barvyDruzin[idx].border} ${barvyDruzin[idx].light}`}>
                       <div className={`${barvyDruzin[idx].bg} ${barvyDruzin[idx].text} p-6 text-center font-black italic uppercase text-3xl print:bg-slate-100 print:text-black`}>Družina {barvyDruzin[idx].jmeno}</div>
                       <div className="p-8 space-y-3 flex-1">
                         {druzina.sort((a,b) => a.oddil - b.oddil).map((d, i) => (
@@ -322,11 +320,11 @@ export default function App() {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; } 
         @media print { 
           .print\\:hidden { display: none !important; } 
-          /* ZMĚNA: Vynucení bloku a zalomení */
           .print\\:block { display: block !important; }
           .print\\:break-after-page { break-after: page; page-break-after: always; }
+          .print\\:break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
           body { background: white; margin: 0; padding: 0; } 
-          @page { size: A4; margin: 1.5cm; } 
+          @page { size: A4; margin: 1cm; } 
           .max-w-\\[1600px\\] { max-width: 100% !important; margin: 0 !important; }
         }
       `}} />
