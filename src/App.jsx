@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Wand2, Printer, Trash2, Trophy, CheckCircle2, AlertTriangle, Dices, Eraser } from 'lucide-react';
+import { Users, Wand2, Printer, Trash2, Trophy, CheckCircle2, AlertTriangle, Dices, Eraser, Info } from 'lucide-react';
 
 export default function App() {
   // 1. VÝCHOZÍ STRUKTURA ODDÍLŮ
@@ -34,6 +34,9 @@ export default function App() {
   const [showEmptyWarningModal, setShowEmptyWarningModal] = useState(false);
   const [pocetTestovacichDeti, setPocetTestovacichDeti] = useState(85);
 
+  // POMOCNÝ VÝPOČET CELKOVÉHO POČTU DĚTÍ
+  const celkemDetiVSeznamech = oddily.reduce((sum, o) => sum + o.deti.length, 0);
+
   // 3. AUTOMATICKÉ UKLÁDÁNÍ PŘI KAŽDÉ ZMĚNĚ
   useEffect(() => {
     localStorage.setItem('taborRozdelovacData', JSON.stringify(oddily));
@@ -50,7 +53,6 @@ export default function App() {
     { jmeno: 'Duhová', bg: 'bg-gradient-to-r from-red-400 via-yellow-400 via-green-400 via-blue-400 to-purple-400', text: 'text-white', border: 'border-indigo-200', light: 'bg-indigo-50' },
   ];
 
-  // --- DATABÁZE PRO GENERÁTOR ---
   const kluciJmena = ['Adam', 'Marek', 'Filip', 'Lukáš', 'David', 'Tomáš', 'Jan', 'Petr', 'Ondřej', 'Matěj', 'Jakub', 'Šimon', 'Michal', 'Vojta', 'Štěpán', 'Daniel', 'Kryštof', 'Martin', 'Richard', 'Alex', 'Samuel', 'Tobiáš', 'Mikuláš', 'Prokop', 'Jáchym', 'Hugo', 'Oliver', 'Teodor', 'Bruno', 'Erik', 'Robin', 'Max', 'Denis', 'Patrik', 'Antonín', 'František', 'Vítek', 'Pepík', 'Toník', 'Ládík', 'Kubík', 'Daneček', 'Honzík', 'Filípek', 'Mareček', 'Adámek', 'Míša', 'Sebík'];
   const holkyJmena = ['Eliška', 'Anna', 'Tereza', 'Adéla', 'Karolína', 'Natálie', 'Lucie', 'Barbora', 'Kristýna', 'Kateřina', 'Verunka', 'Viktorka', 'Sofie', 'Amálie', 'Julie', 'Ema', 'Laura', 'Klára', 'Anežka', 'Nela', 'Sára', 'Jolana', 'Alice', 'Beáta', 'Mia', 'Ella', 'Lea', 'Inna', 'Agáta', 'Stella', 'Nina', 'Izabela', 'Mariana', 'Rozálie', 'Elena', 'Hana', 'Anička', 'Elinka', 'Terezka', 'Adélka', 'Kája', 'Natálka', 'Lucinka', 'Barunka', 'Kristýnka', 'Kačenka', 'Verunka', 'Viktorka'];
   const prijmeniKluci = ['Novák', 'Svoboda', 'Novotný', 'Dvořák', 'Černý', 'Procházka', 'Kučera', 'Veselý', 'Horák', 'Němec', 'Pokorný', 'Marek', 'Pospíšil', 'Hájek', 'Král', 'Jelínek', 'Růžička', 'Beneš', 'Fiala', 'Sedláček', 'Kříž', 'Zeman', 'Kolář', 'Navrátil', 'Čermák', 'Urban', 'Vaněk', 'Blažek', 'Kovář', 'Bartoš', 'Vlček', 'Polák', 'Kopecký', 'Konečný', 'Malý', 'Holub', 'Staněk', 'Štěpánek', 'Dostál', 'Kadlec', 'Soukup', 'Mareš', 'Sýkora', 'Valent', 'Moravec', 'Vávra', 'Matoušek', 'Bláha', 'Mach', 'Šmíd', 'Dušek', 'Janda', 'Hrubý', 'Látal', 'Toman', 'Liška', 'Vojtěch', 'Žák', 'Kroupa', 'Pavlík', 'Jaroš', 'Vacek', 'Vítek', 'Macháček', 'Bílek', 'Beran', 'Říha', 'Šimek', 'Horáček', 'Slaný', 'Zelený', 'Tichý'];
@@ -211,7 +213,9 @@ export default function App() {
               <Users size={48} />
             </div>
             <div>
-              <h1 className="text-4xl font-black uppercase italic tracking-tighter leading-none">Rozřazovač Družin</h1>
+              <h1 className="text-4xl font-black uppercase italic tracking-tighter leading-none flex items-center gap-4">
+                Rozřazovač Družin
+              </h1>
               <p className="text-blue-400 font-bold uppercase tracking-widest text-xs mt-2 opacity-80 italic">
                 vytvořil Karel Špitálník pro II. Běh
               </p>
@@ -244,14 +248,33 @@ export default function App() {
             <button onClick={() => setShowClearModal(true)} className="text-red-500 font-bold px-6 py-3 rounded-xl hover:bg-red-50 transition-all uppercase flex items-center gap-2 text-sm"><Eraser size={18} /> Vymazat tabulky</button>
           </div>
 
-          {/* EDITOR ODDÍLŮ */}
+          {/* EDITOR ODDÍLŮ - SOUČET CELKEM A PERMANENTNÍ NÁPOVĚDA */}
           <div className="mb-16 print:hidden">
-            <h2 className="text-2xl font-black text-slate-800 mb-8 uppercase flex items-center gap-3 italic tracking-tight underline decoration-blue-500 decoration-4 underline-offset-8"><Trophy className="text-yellow-500" size={32} /> Seznamy dětí v oddílech</h2>
+            <div className="mb-8 flex flex-col items-start">
+              <div className="flex items-center gap-4">
+                <h2 className="text-2xl font-black text-slate-800 uppercase flex items-center gap-3 italic tracking-tight underline decoration-blue-500 decoration-4 underline-offset-8">
+                  <Trophy className="text-yellow-500" size={32} /> Seznamy dětí v oddílech
+                </h2>
+                <span className="bg-slate-800 text-white px-3 py-1 rounded-xl font-black text-xs shadow-lg border border-slate-700">
+                    CELKEM: {celkemDetiVSeznamech}
+                </span>
+              </div>
+              
+              {/* PERMANENTNÍ TEXT POD NADPISEM */}
+              <div className="flex items-center gap-2 mt-3 text-slate-500">
+                 <Info size={14} className="text-blue-500" />
+                 <span className="text-[11px] font-black uppercase tracking-widest italic opacity-70">Děti pište od nejlepšího po nejhorší</span>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {oddily.map(o => (
                 <div key={o.id} className={`rounded-[2.5rem] border-2 p-6 shadow-lg transition-transform hover:scale-[1.01] ${o.id % 2 === 0 ? 'border-pink-200 bg-pink-50/50' : 'border-blue-200 bg-blue-50/50'}`}>
                   <div className={`flex justify-between items-center mb-5 pb-3 border-b-2 ${o.id % 2 === 0 ? 'border-pink-100' : 'border-blue-100'}`}>
-                    <h3 className={`font-black text-2xl ${o.id % 2 === 0 ? 'text-pink-700' : 'text-blue-700'}`}>{o.id}. Oddíl</h3>
+                    <h3 className={`font-black text-2xl ${o.id % 2 === 0 ? 'text-pink-700' : 'text-blue-700'}`}>
+                      {o.id}. Oddíl 
+                      <span className="ml-2 text-sm opacity-50 font-black">({o.deti.length})</span>
+                    </h3>
                     <span className="text-[10px] font-black opacity-40 uppercase tracking-widest">{o.pohlavi}</span>
                   </div>
                   <div className="space-y-4">
