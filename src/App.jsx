@@ -273,17 +273,20 @@ export default function App() {
           {/* VÝSLEDKY */}
           {vysledneDruziny.length > 0 && (
             <div className="mt-10 pt-10 border-t-4 border-slate-100">
-              <div className="flex justify-between items-center mb-10">
+              <div className="flex justify-between items-center mb-10 print:hidden">
                 <h2 className="text-5xl font-black text-slate-900 uppercase italic tracking-tighter">Finální Družiny</h2>
-                <button onClick={() => window.print()} className="bg-slate-900 text-white px-10 py-5 rounded-2xl font-black flex items-center gap-3 hover:bg-slate-700 transition shadow-2xl print:hidden active:scale-95 text-xl"><Printer size={28} /> TISK</button>
+                <button onClick={() => window.print()} className="bg-slate-900 text-white px-10 py-5 rounded-2xl font-black flex items-center gap-3 hover:bg-slate-700 transition shadow-2xl text-xl"><Printer size={28} /> TISK</button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 print:grid-cols-2">
+              
+              {/* ZMĚNA: print:block pro korektní zalomení stránek */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 print:block">
                 {vysledneDruziny.map((druzina, idx) => {
                   const kluciCount = druzina.filter(d => d.pohlavi === 'Kluci').length;
                   const holkyCount = druzina.filter(d => d.pohlavi === 'Holky').length;
                   const oddilyStats = Array.from({length: 8}, (_, i) => i + 1).map(id => ({ id, count: druzina.filter(d => d.oddil === id).length })).filter(o => o.count > 0);
                   return (
-                    <div key={idx} className={`border-2 rounded-[3rem] overflow-hidden shadow-2xl transition-all hover:scale-[1.02] flex flex-col ${barvyDruzin[idx].border} ${barvyDruzin[idx].light}`}>
+                    /* ZMĚNA: print:break-after-page a print:mb-0 */
+                    <div key={idx} className={`border-2 rounded-[3rem] overflow-hidden shadow-2xl transition-all hover:scale-[1.02] flex flex-col mb-8 print:mb-0 print:break-after-page ${barvyDruzin[idx].border} ${barvyDruzin[idx].light}`}>
                       <div className={`${barvyDruzin[idx].bg} ${barvyDruzin[idx].text} p-6 text-center font-black italic uppercase text-3xl print:bg-slate-100 print:text-black`}>Družina {barvyDruzin[idx].jmeno}</div>
                       <div className="p-8 space-y-3 flex-1">
                         {druzina.sort((a,b) => a.oddil - b.oddil).map((d, i) => (
@@ -313,7 +316,20 @@ export default function App() {
         </div>
       </div>
 
-      <style dangerouslySetInnerHTML={{ __html: `.custom-scrollbar::-webkit-scrollbar { width: 8px; } .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; } @media print { .print\\:hidden { display: none !important; } body { background: white; } @page { size: A4; margin: 1cm; } }`}} />
+      <style dangerouslySetInnerHTML={{ __html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; } 
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } 
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; } 
+        @media print { 
+          .print\\:hidden { display: none !important; } 
+          /* ZMĚNA: Vynucení bloku a zalomení */
+          .print\\:block { display: block !important; }
+          .print\\:break-after-page { break-after: page; page-break-after: always; }
+          body { background: white; margin: 0; padding: 0; } 
+          @page { size: A4; margin: 1.5cm; } 
+          .max-w-\\[1600px\\] { max-width: 100% !important; margin: 0 !important; }
+        }
+      `}} />
     </div>
   );
 }
