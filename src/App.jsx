@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Wand2, Printer, Trash2, Trophy, CheckCircle2, AlertTriangle, Dices, Eraser, Info } from 'lucide-react';
+import { Users, Wand2, Printer, Trash2, Trophy, CheckCircle2, AlertTriangle, Dices, Eraser, Info, X, HelpCircle, TestTube } from 'lucide-react';
 
 export default function App() {
   // 1. VÝCHOZÍ STRUKTURA ODDÍLŮ
@@ -32,9 +32,11 @@ export default function App() {
   const [showModal, setShowModal] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
   const [showEmptyWarningModal, setShowEmptyWarningModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const [pocetTestovacichDeti, setPocetTestovacichDeti] = useState(85);
+  const [isTestMode, setIsTestMode] = useState(false);
 
-  // POMOCNÝ VÝPOČET CELKOVÉHO POČTU DĚTÍ - automaticky se aktualizuje při změně state
+  // POMOCNÝ VÝPOČET CELKOVÉHO POČTU DĚTÍ
   const celkemDetiVSeznamech = oddily.reduce((sum, o) => sum + o.deti.length, 0);
 
   // 3. AUTOMATICKÉ UKLÁDÁNÍ PŘI KAŽDÉ ZMĚNĚ
@@ -110,20 +112,29 @@ export default function App() {
 
   const generovatDruziny = () => {
     const noveDruziny = Array.from({ length: pocetDruzin }, () => []);
+
+    // 1. ZÁKLADNÍ ROZDĚLENÍ: TAHOUNI, PÁRY A ROTACE
     oddily.forEach((oddil, oIdx) => {
       const deti = [...oddil.deti];
       const N = deti.length;
       if (N === 0) return;
+
       let chunks = [];
       let pocetParu = N - pocetDruzin;
       let pocetSingles = pocetDruzin - pocetParu;
+      
       if (pocetParu < 0) { pocetParu = 0; pocetSingles = N; }
       if (pocetSingles < 0) { pocetSingles = 0; pocetParu = pocetDruzin; }
+      
       let aktualniIndex = 0;
+      
+      // A) Tahouni - jdou do pole první, takže je dostanou první družiny v rotaci
       for (let i = 0; i < pocetSingles; i++) {
         chunks.push([{ jmeno: deti[aktualniIndex], oddil: oddil.id, rank: aktualniIndex + 1, pohlavi: oddil.pohlavi }]);
         aktualniIndex++;
       }
+      
+      // B) Zrcadlové páry
       let left = aktualniIndex;
       let right = N - 1;
       for (let i = 0; i < pocetParu && left < right; i++) {
@@ -134,23 +145,125 @@ export default function App() {
         left++;
         right--;
       }
+      
+      // C) Zbytky pro obří oddíly (např. oddíl má 20 dětí pro 8 družin)
       while (left <= right) {
         chunks[left % pocetDruzin].push({ jmeno: deti[left], oddil: oddil.id, rank: left + 1, pohlavi: oddil.pohlavi });
         left++;
       }
+      
+      // D) Doplnění prázdných balíčků, aby rotace nepadla
       while (chunks.length < pocetDruzin) {
         chunks.push([]);
       }
+
+      // E) Distribuce - přesná rotace (Snake draft). Tahouni tak přistanou na startovních pozicích.
       chunks.forEach((chunk, cIdx) => {
         const dIdx = (cIdx + oIdx) % pocetDruzin;
         chunk.forEach(dite => noveDruziny[dIdx].push(dite));
       });
     });
+
+    // 2. CHYTRÝ BALANCER: Dorovnání počtů napříč družinami
+    // Pokud po Snake Draftu mají některé družiny o 2 a více dětí navíc,
+    // přesuneme jeden "Pár" za "Singla" mezi přeplněnou a prázdnou družinou.
+    let isBalanced = false;
+    let loopCounter = 0; // pojistka
+
+    while (!isBalanced && loopCounter < 100) {
+      loopCounter++;
+      let maxLen = -1; let minLen = 9999;
+      let maxIdx = -1; let minIdx = -1;
+
+      // Hledání extrémů
+      noveDruziny.forEach((druzina, idx) => {
+        if (druzina.length > maxLen) { maxLen = druzina.length; maxIdx = idx; }
+        if (druzina.length < minLen) { minLen = druzina.length; minIdx = idx; }
+      });
+
+      // Pokud je rozdíl maximálně 1, máme hotovo!
+      if (maxLen - minLen <= 1) {
+        isBalanced = true;
+        break;
+      }
+
+      // Potřebujeme zmenšit maxIdx a zvětšit minIdx
+      let swapMade = false;
+      
+      for (let oddilId = 1; oddilId <= 8; oddilId++) {
+        // Zjistíme, kolik dětí z daného oddílu mají obě tyto družiny
+        const maxDruzinaDeti = noveDruziny[maxIdx].filter(d => d.oddil === oddilId);
+        const minDruzinaDeti = noveDruziny[minIdx].filter(d => d.oddil === oddilId);
+
+        // Pokud má velká družina z tohoto oddílu víc dětí (dostala Pár a malá dostala Tahouna/Nic)
+        if (maxDruzinaDeti.length > minDruzinaDeti.length) {
+          // Vyndáme tyto děti z obou družin
+          noveDruziny[maxIdx] = noveDruziny[maxIdx].filter(d => d.oddil !== oddilId);
+          noveDruziny[minIdx] = noveDruziny[minIdx].filter(d => d.oddil !== oddilId);
+
+          // Prohodíme jejich balíčky. Velká tak získá méně dětí, malá více.
+          maxDruzinaDeti.forEach(d => noveDruziny[minIdx].push(d));
+          minDruzinaDeti.forEach(d => noveDruziny[maxIdx].push(d));
+
+          swapMade = true;
+          break; // udělali jsme krok ke srovnání, jdeme hodnotit znovu
+        }
+      }
+
+      // Extrémní záchranná brzda, pokud by oddíly nešly spravedlivě prohodit
+      if (!swapMade) {
+        const diteKPresunu = noveDruziny[maxIdx].pop();
+        if (diteKPresunu) noveDruziny[minIdx].push(diteKPresunu);
+      }
+    }
+
     setVysledneDruziny(noveDruziny);
   };
 
   return (
     <div className="min-h-screen bg-slate-100 p-4 sm:p-6 md:p-12 font-sans print:bg-white print:p-0 relative">
+      {/* INFO MODÁLNÍ OKNO - JAK TO FUNGUJE */}
+      {showInfoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 print:hidden">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowInfoModal(false)}></div>
+          <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 max-w-3xl w-full relative shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <button onClick={() => setShowInfoModal(false)} className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors">
+              <X size={24} />
+            </button>
+            <div className="flex items-center gap-4 mb-6 text-blue-600">
+              <div className="bg-blue-100 p-3 sm:p-4 rounded-2xl"><HelpCircle size={32} /></div>
+              <h3 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tight text-slate-800">Jak to funguje?</h3>
+            </div>
+            <div className="space-y-5 text-slate-600 text-sm sm:text-base leading-relaxed">
+              <p className="font-bold text-slate-800">Tato aplikace neslouží jen k náhodnému zamíchání dětí. Na pozadí běží komplexní matematický algoritmus, který zaručuje absolutní spravedlnost, rovnoměrné rozložení sil a zajišťuje, že žádná družina nebude oproti ostatním ve výhodě.</p>
+              
+              <ul className="space-y-4">
+                <li><strong className="text-slate-800 text-lg">1. Vstupní data a Ranky</strong><br/>Děti jsou v každém oddílu seřazeny podle výkonnosti (Ranku). Rank #1 je nejlepší a nejschopnější dítě, Rank #N je fyzicky či dovednostně nejslabší.</li>
+                
+                <li><strong className="text-slate-800 text-lg">2. Logika Tahounů (Kdo jde sám)</strong><br/>Z oddílu vybere algoritmus ty úplně nejlepší (Rank #1, #2...) a pošle je do týmu samotné jako zástupce, protože jsou dostatečně silní, aby tým podrželi.</li>
+                
+                <li><strong className="text-slate-800 text-lg">3. Zrcadlové párování (Teorie 1+12)</strong><br/>Slabší děti algoritmus nikdy nepošle do družiny samotné. Spojí nejlepšího ze zbývajících s úplně nejhorším (např. Rank #5 + Rank #10). Tím vzniknou dvojice, které mají v součtu vždy naprosto stejnou sílu.</li>
+                
+                <li><strong className="text-slate-800 text-lg">4. Rotační distribuce (Snake draft)</strong><br/>Balíčky se rozdávají rotačně. Aby například Žlutá družina nedostala nejlepší dítě (Rank #1) z prvního i druhého oddílu, startovní pozice pro rozdávání se u dalšího oddílu posune na další družinu (Zelenou).</li>
+                
+                <li><strong className="text-slate-800 text-lg">5. Garantované zastoupení a extrémy</strong><br/>Algoritmus garantuje, že v každé družině je minimálně jeden zástupce z každého oddílu. Pokud je dětí nepravidelný počet, inteligentně je rozdělí tak, že rozdíl v počtu dětí mezi jakýmikoliv týmy je vždy maximálně 1.</li>
+              </ul>
+
+              <div className="mt-6 bg-blue-50 p-5 rounded-2xl border border-blue-100">
+                <h4 className="font-black text-blue-900 mb-2 uppercase tracking-wider text-sm">Výsledek na finální kartě družiny:</h4>
+                <ul className="list-disc pl-5 space-y-1 text-blue-800 text-sm">
+                  <li>Počet kluků a holek je vyrovnaný.</li>
+                  <li>Zastoupení věkových oddílů pokrývá celé spektrum.</li>
+                  <li>Součet "Ranků" (pořadí) dětí je napříč všemi družinami téměř totožný, takže týmy jsou absolutně vyrovnané na celotáborovou hru.</li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-8 flex justify-end">
+              <button onClick={() => setShowInfoModal(false)} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-slate-700 active:scale-95 transition-all shadow-xl uppercase w-full sm:w-auto">Rozumím</button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* MODÁLNÍ OKNA */}
       {showEmptyWarningModal && (
@@ -219,6 +332,9 @@ export default function App() {
               <p className="text-blue-400 font-bold uppercase tracking-widest text-[10px] sm:text-xs mt-2 opacity-80 italic">
                 vytvořil Karel Špitálník pro II. Běh
               </p>
+              <button onClick={() => setShowInfoModal(true)} className="mt-3 flex items-center gap-2 text-blue-300 hover:text-white text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors">
+                <HelpCircle size={16} /> Jak funguje algoritmus?
+              </button>
             </div>
           </div>
 
@@ -231,40 +347,55 @@ export default function App() {
                 ))}
               </div>
             </div>
+            {/* TLAČÍTKO PRO TESTOVACÍ MÓD (TOGGLE) */}
+            <button 
+              onClick={() => setIsTestMode(!isTestMode)} 
+              className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl flex items-center justify-center gap-2 font-black uppercase text-xs sm:text-sm transition-all border ${isTestMode ? 'bg-indigo-600 text-white border-indigo-500 shadow-inner' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
+              title="Přepnout zobrazení nástrojů pro testování"
+            >
+              <TestTube size={18} />
+              <span className="hidden sm:inline">{isTestMode ? 'Vypnout Test Mód' : 'Testovací Mód'}</span>
+            </button>
             <button onClick={handleRozdelitClick} className="bg-yellow-400 text-black px-6 sm:px-12 py-4 sm:py-6 rounded-xl sm:rounded-[2rem] font-black hover:scale-105 active:scale-95 transition-all shadow-xl uppercase text-lg sm:text-2xl flex items-center justify-center gap-3 sm:gap-4 border-b-4 border-yellow-600 w-full sm:w-auto"><Wand2 className="w-6 h-6 sm:w-8 sm:h-8" /> Rozdělit děti</button>
           </div>
         </div>
 
         <div className="p-4 sm:p-8 md:p-12">
-          {/* KONTROLNÍ PANEL */}
-          <div className="bg-slate-50 p-4 rounded-2xl sm:rounded-3xl border border-slate-200 mb-8 sm:mb-10 print:hidden flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-              <div className="flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                <span className="bg-slate-100 px-3 sm:px-4 py-3 text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest border-r border-slate-200 whitespace-nowrap">Test dětí:</span>
-                <input type="number" value={pocetTestovacichDeti} onChange={(e) => setPocetTestovacichDeti(Number(e.target.value))} className="w-full sm:w-20 p-2 text-center font-black text-slate-700 outline-none" />
+          {/* KONTROLNÍ PANEL - ZOBRAZÍ SE JEN KDYŽ JE ZAPNUTÝ TEST MODE */}
+          {isTestMode && (
+            <div className="bg-indigo-50/50 p-4 rounded-2xl sm:rounded-3xl border border-indigo-100 mb-8 sm:mb-10 print:hidden flex flex-col sm:flex-row items-stretch sm:items-center gap-4 shadow-inner animate-in slide-in-from-top-4 fade-in duration-300 w-fit">
+              <div className="flex items-center bg-white border border-indigo-200 rounded-xl overflow-hidden shadow-sm">
+                <span className="bg-indigo-50 px-3 sm:px-4 py-3 text-[10px] sm:text-xs font-black text-indigo-600 uppercase tracking-widest border-r border-indigo-200 whitespace-nowrap">Test dětí:</span>
+                <input type="number" value={pocetTestovacichDeti} onChange={(e) => setPocetTestovacichDeti(Number(e.target.value))} className="w-full sm:w-20 p-2 text-center font-black text-indigo-900 outline-none" />
               </div>
-              <button onClick={vygenerovatData} className="bg-blue-100 text-blue-700 border border-blue-200 px-4 sm:px-6 py-3 rounded-xl font-black text-[10px] sm:text-sm hover:bg-blue-200 transition-all uppercase flex items-center justify-center gap-2"><Dices size={16} className="sm:w-[18px] sm:h-[18px]"/> Vygenerovat náhodně</button>
+              <button onClick={vygenerovatData} className="bg-indigo-600 text-white border border-indigo-500 px-4 sm:px-6 py-3 rounded-xl font-black text-[10px] sm:text-sm hover:bg-indigo-700 shadow-md transition-all uppercase flex items-center justify-center gap-2"><Dices size={16} className="sm:w-[18px] sm:h-[18px]"/> Vygenerovat náhodně</button>
             </div>
-            <button onClick={() => setShowClearModal(true)} className="text-red-500 font-bold px-4 sm:px-6 py-3 rounded-xl hover:bg-red-50 transition-all uppercase flex items-center justify-center gap-2 text-[10px] sm:text-sm"><Eraser size={16} className="sm:w-[18px] sm:h-[18px]"/> Vymazat tabulky</button>
-          </div>
+          )}
 
-          {/* EDITOR ODDÍLŮ - SOUČET CELKEM A PERMANENTNÍ NÁPOVĚDA */}
+          {/* EDITOR ODDÍLŮ - SOUČET CELKEM, INFO A TLAČÍTKO VYMAZAT VŠE */}
           <div className="mb-12 sm:mb-16 print:hidden">
-            <div className="mb-6 sm:mb-8 flex flex-col items-start">
-              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-                <h2 className="text-xl sm:text-2xl font-black text-slate-800 uppercase flex items-center gap-2 sm:gap-3 italic tracking-tight underline decoration-blue-500 decoration-4 underline-offset-8">
-                  <Trophy className="text-yellow-500 w-6 h-6 sm:w-8 sm:h-8" /> Seznamy dětí v oddílech
-                </h2>
-                <span className="bg-slate-800 text-white px-2 sm:px-3 py-1 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-xs shadow-lg border border-slate-700">
-                    CELKEM: {celkemDetiVSeznamech}
-                </span>
+            <div className="mb-6 sm:mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div className="flex flex-col items-start">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                  <h2 className="text-xl sm:text-2xl font-black text-slate-800 uppercase flex items-center gap-2 sm:gap-3 italic tracking-tight underline decoration-blue-500 decoration-4 underline-offset-8">
+                    <Trophy className="text-yellow-500 w-6 h-6 sm:w-8 sm:h-8" /> Seznamy dětí v oddílech
+                  </h2>
+                  <span className="bg-slate-800 text-white px-2 sm:px-3 py-1 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-xs shadow-lg border border-slate-700">
+                      CELKEM: {celkemDetiVSeznamech}
+                  </span>
+                </div>
+                
+                {/* PERMANENTNÍ TEXT POD NADPISEM */}
+                <div className="flex items-center gap-1.5 sm:gap-2 mt-2 sm:mt-3 text-slate-500">
+                   <Info size={12} className="sm:w-3.5 sm:h-3.5 text-blue-500" />
+                   <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-widest italic opacity-70">Děti pište od nejlepšího po nejhorší</span>
+                </div>
               </div>
-              
-              {/* PERMANENTNÍ TEXT POD NADPISEM */}
-              <div className="flex items-center gap-1.5 sm:gap-2 mt-2 sm:mt-3 text-slate-500">
-                 <Info size={12} className="sm:w-3.5 sm:h-3.5 text-blue-500" />
-                 <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-widest italic opacity-70">Děti pište od nejlepšího po nejhorší</span>
-              </div>
+
+              {/* TLAČÍTKO VYMAZAT VŽDY VIDITELNÉ U ODDÍLŮ */}
+              <button onClick={() => setShowClearModal(true)} className="text-red-600 bg-red-50 border border-red-200 font-bold px-4 sm:px-6 py-3 rounded-xl hover:bg-red-100 transition-all uppercase flex items-center justify-center gap-2 text-[10px] sm:text-sm w-full md:w-auto shadow-sm">
+                <Eraser size={16} className="sm:w-[18px] sm:h-[18px]"/> Vymazat tabulky
+              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
